@@ -6,11 +6,18 @@ cmake_minimum_required(VERSION 2.6)
 # and producing a warning when unset since 3.7.1)
 cmake_policy(SET CMP0042 NEW)
 
+# load paths from the user file if exists
+if (EXISTS ${CMAKE_SOURCE_DIR}/CMakeUserPaths.cmake)
+	include(${CMAKE_SOURCE_DIR}/CMakeUserPaths.cmake)
+elseif(MSVC)
+	message(WARNING "Could not find CMakeUserPaths.cmake - please use this file to specify your install directories (see CMakeUserPathsGit.cmake)")
+endif()
+
 option(BUILD_WITH_QT4 "Build QuaZip with Qt4 no matter if Qt5 was found" OFF)
 
 if( NOT BUILD_WITH_QT4 )
     # try Qt5 first, and prefer that if found
-    find_package(Qt5Core QUIET)
+    find_package(Qt5Core REQUIRED)
 endif()
 
 if(Qt5Core_FOUND)
@@ -26,7 +33,7 @@ if(Qt5Core_FOUND)
     macro(qt_wrap_cpp)
         qt5_wrap_cpp(${ARGN})
     endmacro()
-else()
+elseif(BUILD_WITH_QT4)
     set(qt_min_version "4.5.0")
     find_package(Qt4 REQUIRED)
     set(QT_USE_QTGUI false)
@@ -44,7 +51,12 @@ if(UNIX OR MINGW)
     find_package(ZLIB REQUIRED)
 else(UNIX OR MINGW)
     set(ZLIB_INCLUDE_DIRS "${QT_ROOT}/src/3rdparty/zlib" CACHE STRING "Path to ZLIB headers of Qt")
-    set(ZLIB_LIBRARIES "")
+    # set(ZLIB_LIBRARIES "")  # empty zlib is only working for x86
+
+    if(NOT EXISTS "${ZLIB_INCLUDE_DIRS}/zlib.h")
+        set(ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIR})	# take the one from the user
+    endif(NOT EXISTS "${ZLIB_INCLUDE_DIRS}/zlib.h")
+
     if(NOT EXISTS "${ZLIB_INCLUDE_DIRS}/zlib.h")
         message("Please specify a valid zlib include dir")
     endif(NOT EXISTS "${ZLIB_INCLUDE_DIRS}/zlib.h")
@@ -61,3 +73,10 @@ set(QUAZIP_LIB_TARGET_NAME quazip${QUAZIP_LIB_VERSION_SUFFIX} CACHE
 add_subdirectory(quazip)
 
 install(FILES FindQuaZip.cmake RENAME FindQuaZip${QUAZIP_LIB_VERSION_SUFFIX}.cmake DESTINATION ${CMAKE_ROOT}/Modules)
+
+# write configuration file
+get_property(QUAZIP_DEBUG_NAME TARGET ${QUAZIP_LIB_TARGET_NAME} PROPERTY DEBUG_OUTPUT_NAME)
+get_property(QUAZIP_RELEASE_NAME TARGET ${QUAZIP_LIB_TARGET_NAME} PROPERTY RELEASE_OUTPUT_NAME)
+SET(QUAZIP_LIBS optimized ${CMAKE_CURRENT_BINARY_DIR}/Release/${QUAZIP_LIB_TARGET_NAME}.lib debug ${CMAKE_CURRENT_BINARY_DIR}/Debug/${QUAZIP_LIB_TARGET_NAME}d.lib)
+SET(ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS})
+configure_file(${CMAKE_SOURCE_DIR}/QuaZip.cmake.in ${CMAKE_BINARY_DIR}/QuaZipConfig.cmake)

@@ -22,7 +22,8 @@ before_script:
 script:
   - cmake $CMAKE_ARGS ../.
   - make -j8
-      
+  
+  
 notifications:
   email:
     - diemmarkus@gmail.com

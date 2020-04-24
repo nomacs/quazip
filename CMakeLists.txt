@@ -13,9 +13,31 @@ elseif(MSVC)
 	message(WARNING "Could not find CMakeUserPaths.cmake - please use this file to specify your install directories (see CMakeUserPathsGit.cmake)")
 endif()
 
+# nomacs config
+SET(ZLIB_LIBRARIES optimized "${ZLIB_BUILD_PATH}/lib/Release/zlib.lib" debug "${ZLIB_BUILD_PATH}/lib/Debug/zlibd.lib")
+
 option(BUILD_WITH_QT4 "Build QuaZip with Qt4 no matter if Qt5 was found" OFF)
 
 if( NOT BUILD_WITH_QT4 )
+
+    # locate qmake - this is for nomacs config...
+    if(NOT QT_QMAKE_EXECUTABLE)
+    find_program(QT_QMAKE_EXECUTABLE NAMES "qmake" "qmake-qt5" "qmake.exe")
+    endif()
+    if(NOT QT_QMAKE_EXECUTABLE)
+    message(FATAL_ERROR "you have to set the path to the Qt5 qmake executable in CMakeUserPaths.cmake")
+    else()
+    message(STATUS "QMake found: ${QT_QMAKE_EXECUTABLE}")
+    endif()
+
+    get_filename_component(QT_QMAKE_PATH ${QT_QMAKE_EXECUTABLE} PATH)
+
+    set(QT_ROOT ${QT_QMAKE_PATH}/)
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${QT_QMAKE_PATH}/../lib/cmake/Qt5)
+
+    find_package(Qt5 COMPONENTS Core Gui REQUIRED)
+
+
     # try Qt5 first, and prefer that if found
     find_package(Qt5Core REQUIRED)
 endif()
@@ -58,6 +80,7 @@ else(UNIX OR MINGW)
     endif(NOT EXISTS "${ZLIB_INCLUDE_DIRS}/zlib.h")
 
     if(NOT EXISTS "${ZLIB_INCLUDE_DIRS}/zlib.h")
+        message(WARNING "cannot find ${ZLIB_INCLUDE_DIRS}/zlib.h")
         message("Please specify a valid zlib include dir")
     endif(NOT EXISTS "${ZLIB_INCLUDE_DIRS}/zlib.h")
 endif(UNIX OR MINGW)

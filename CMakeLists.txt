@@ -5,6 +5,7 @@ project(QuaZip)
 # (introduced in CMake 2.8.12, enabled by default in CMake 3.0,
 # and producing a warning when unset since 3.7.1)
 cmake_policy(SET CMP0042 NEW)
+cmake_policy(SET CMP0020 NEW)
 
 # load paths from the user file if exists
 if (EXISTS ${CMAKE_SOURCE_DIR}/CMakeUserPaths.cmake)
@@ -37,9 +38,6 @@ if( NOT BUILD_WITH_QT4 )
 
     find_package(Qt5 COMPONENTS Core Gui REQUIRED)
 
-
-    # try Qt5 first, and prefer that if found
-    find_package(Qt5Core REQUIRED)
 endif()
 
 if(Qt5Core_FOUND)

@@ -17,6 +17,9 @@ endif()
 # nomacs config
 SET(ZLIB_LIBRARIES optimized "${ZLIB_BUILD_PATH}/lib/Release/zlib.lib" debug "${ZLIB_BUILD_PATH}/lib/Debug/zlibd.lib")
 
+set(QUAZIP_LIB_VERSION 0.9.1)
+set(QUAZIP_LIB_SOVERSION 1)
+
 option(BUILD_WITH_QT4 "Build QuaZip with Qt4 no matter if Qt5 was found" OFF)
 
 if( NOT BUILD_WITH_QT4 )
@@ -86,17 +89,25 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
 set(LIB_SUFFIX "" CACHE STRING "Define suffix of directory name (32/64)")
 set(LIB_DESTINATION "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}" CACHE STRING "Library directory name" FORCE)
+set(INSTALL_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/pkgconfig" CACHE STRING "Installation directory for pkgconfig (.pc) files" FORCE)
 set(QUAZIP_LIB_TARGET_NAME quazip${QUAZIP_LIB_VERSION_SUFFIX} CACHE
     INTERNAL "Target name of libquazip" FORCE)
 
 add_subdirectory(quazip)
 
-
 # write nomacs config file
-
 # install(FILES FindQuaZip.cmake RENAME FindQuaZip${QUAZIP_LIB_VERSION_SUFFIX}.cmake DESTINATION ${CMAKE_ROOT}/Modules)
 get_property(QUAZIP_DEBUG_NAME TARGET ${QUAZIP_LIB_TARGET_NAME} PROPERTY DEBUG_OUTPUT_NAME)
 get_property(QUAZIP_RELEASE_NAME TARGET ${QUAZIP_LIB_TARGET_NAME} PROPERTY RELEASE_OUTPUT_NAME)
 SET(QUAZIP_LIBRARIES optimized ${CMAKE_CURRENT_BINARY_DIR}/Release/${QUAZIP_LIB_TARGET_NAME}.lib debug ${CMAKE_CURRENT_BINARY_DIR}/Debug/${QUAZIP_LIB_TARGET_NAME}d.lib)
 SET(QUAZIP_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/quazip/include/)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/QuaZip.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/QuaZipConfig.cmake)
+
+if(UNIX AND NOT APPLE)
+	configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/quazip.pc.cmakein
+			${CMAKE_CURRENT_BINARY_DIR}/quazip.pc @ONLY)
+	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/quazip.pc DESTINATION "${INSTALL_PKGCONFIG_DIR}")
+endif()
+
+install(FILES QuaZipConfig.cmake DESTINATION ${LIB_DESTINATION}/cmake/QuaZip${QUAZIP_LIB_VERSION_SUFFIX} RENAME QuaZip${QUAZIP_LIB_VERSION_SUFFIX}Config.cmake)
+
